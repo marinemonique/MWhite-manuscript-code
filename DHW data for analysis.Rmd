@@ -1,0 +1,113 @@
+---
+title: "DHW data"
+author: "Monique White"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rerddap)
+library(lubridate)
+library(purrr)
+library(readxl)
+```
+
+# Reef Table
+```{r}
+NGBR_sites_for_coral_settlement_tiles <- read_excel("~/Larval recruitment resources/Maps/NGBR sites for coral settlement tiles.xlsx",
+                                                  col_types = c("text", "numeric", "numeric", "text", "text"))
+
+reefs <- NGBR_sites_for_coral_settlement_tiles |> group_by(Reef) |> summarise(
+  lat = mean(Lat),
+  lon = mean(Long)
+)
+```
+
+```{r}
+download_reef_chunks <- function(reefs,
+                                 start_date = "2020-01-01",
+                                 end_date   = "2025-04-01",
+                                 batch_size = 6,
+                                 chunk_months = 18,
+                                 out_dir = "reef_raw") {
+  
+  dir.create(out_dir, showWarnings = FALSE)
+  
+  start_date <- as.Date(start_date)
+  end_date   <- as.Date(end_date)
+  
+  time_starts <- seq(start_date, end_date, by = paste(chunk_months, "months"))
+  reef_batches <- split(reefs, ceiling(seq_len(nrow(reefs)) / batch_size))
+  
+  for (t in seq_along(time_starts)) {
+    
+    chunk_start <- time_starts[t]
+    chunk_end   <- min(chunk_start %m+% months(chunk_months) - days(1), end_date)
+    
+    for (b in seq_along(reef_batches)) {
+      
+      file_name <- paste0(
+        out_dir, "/reef_batch_", b,
+        "_", chunk_start, "_", chunk_end, ".rds"
+      )
+      
+      if (file.exists(file_name)) {
+        message("Skipping existing: ", file_name)
+        next
+      }
+      
+      message("Downloading: ", file_name)
+      
+batch_data <- pmap_dfr(
+  reef_batches[[b]],
+  function(Reef, lon, lat) {
+
+    dat <- tryCatch(
+      griddap(
+        datasetx = "NOAA_DHW",
+            url = "https://coastwatch.pfeg.noaa.gov/erddap/",
+        time = c(as.character(chunk_start), as.character(chunk_end)),
+        latitude = c(lat, lat),
+        longitude = c(lon, lon),
+        fields = c("CRW_SST", "CRW_DHW") # <- correct fields
+      )$data,
+      error = function(e) {
+        message("Download failed for reef: ", Reef, " | Reason: ", e$message)
+        return(NULL)
+      }
+    )
+
+    if (is.null(dat)) return(NULL)
+
+    dat %>%
+      mutate(
+        Reef = Reef,
+        date   = as.Date(time),
+        year   = year(date),
+        month  = month(date)
+      )
+  }
+)
+      saveRDS(batch_data, file_name)
+      Sys.sleep(1)
+    }
+  }
+}
+
+```
+
+```{r}
+download_reef_chunks(reefs)
+```
+
+```{r}
+reef_daily <- combine_reef_data() # the full daily data for all reefs
+reef_daily <- reef_daily %>%
+  mutate(
+    week  = isoweek(date),  # ISO week number (1–52/53)
+    year  = year(date)
+  )
+```
+
