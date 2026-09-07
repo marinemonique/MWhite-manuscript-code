@@ -455,7 +455,7 @@ Mid_shelf <- ggplot() +
   annotation_scale(
     height = unit(0.15, "cm"),
     location = "bl",
-    width_hint = 0.2,
+    width_hint = 0.3,
     pad_x = unit(0.5, "cm"),
     pad_y = unit(0.4, "cm"),
     text_col = "white",
