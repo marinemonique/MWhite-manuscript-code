@@ -316,7 +316,7 @@ library(scales)
 A <- ggplot()+
     geom_jitter(data = total_mean_site, aes(x=Year, y = mean_site, group = Shelf), 
                 position = position_jitterdodge(jitter.width = 0.35, dodge.width = 0.85),
-    size = 1.5,
+    size = 1,
     alpha = 0.75,
     colour = "#606060", shape = 1)+
   geom_pointrange(data = total_model_emm,aes(x=Year,
@@ -432,7 +432,7 @@ acro_mean_site <- Acroporidae |>
 B <- ggplot()+
      geom_jitter(data =acro_mean_site, aes(x=Year, y=mean_site, group = Shelf),
     position = position_jitterdodge(jitter.width = 0.35, dodge.width = 0.85),
-    size = 1.5,
+    size = 1,
     alpha = 0.75,
     colour = "#606060",
     shape = 1
@@ -496,7 +496,7 @@ Generate figure
 C <- ggplot()+
      geom_jitter(data =poci_mean_site, aes(x=Year, y=mean_site, group = Shelf),
     position = position_jitterdodge(jitter.width = 0.35, dodge.width = 0.85),
-    size = 1.5,
+    size = 1,
     alpha = 0.75,
     colour = "#606060", shape = 1
   )+
@@ -553,7 +553,7 @@ Generate figure
 D <- ggplot()+
      geom_jitter(data =pori_mean_site, aes(x=Year, y=mean_site, group = Shelf),
     position = position_jitterdodge(jitter.width = 0.35, dodge.width = 0.85),
-    size = 1.5,
+    size = 1,
     alpha = 0.75,
     colour = "#606060", shape = 1
   )+
@@ -608,7 +608,7 @@ other_mean_site <- Other |>
 E <- ggplot()+
      geom_jitter(data =other_mean_site, aes(x=Year, y=mean_site, group = Shelf),
     position = position_jitterdodge(jitter.width = 0.35, dodge.width = 0.8),
-    size = 1.5,
+    size = 1,
     alpha = 0.75,
     colour = "#606060", shape = 1
   )+
@@ -617,7 +617,8 @@ E <- ggplot()+
              color=Shelf),
                   position = position_dodge(width = 0.85), )+
   theme_classic()+
-  labs(y=expression("Other recruits ( " * tile^{-1} * ")"))+
+  labs(y=expression("Predicted recruits (" * tile^{-1} * ")"),
+       title = "Other hard corals")+
   scale_x_discrete(
     "Deployment",
     labels = c("2021-22" = "21/22",
@@ -635,6 +636,21 @@ E
 ```
 
 Combined figure
+```{r}
+recruits_top_other <- ggarrange(A, B, ncol =2, nrow = 1, labels = c("A","B"), common.legend = TRUE, legend = "none")
+recruits_bottom_other <- ggarrange(C, D, E, ncol =3, nrow = 1, labels = c("C","D", "E"), common.legend = TRUE, legend = "bottom")
+
+recruits_manuscript <- ggarrange(recruits_top_other, recruits_bottom_other, ncol =1, nrow=2, common.legend = TRUE, legend = "bottom")
+
+recruits_manuscript
+
+ggsave(recruits_manuscript, filename = "figures/Figure2.PDF",
+         width = 240,
+         height = 160,
+         units = "mm"
+        )
+```
+
 
 ```{r}
 # recruits_wo_other <- ggarrange(B, C, D, ncol =1, nrow = 3, labels = c("B", "C", "D"), common.legend = TRUE, legend = "none")
