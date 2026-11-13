@@ -615,7 +615,7 @@ E <- ggplot()+
   geom_pointrange(data = nbin_other_data,aes(ymin = asymp.LCL, ymax = asymp.UCL,x=Year,
              y=response, 
              color=Shelf),
-                  position = position_dodge(width = 0.85), )+
+                  position = position_dodge(width = 0.85))+
   theme_classic()+
   labs(y=expression("Predicted recruits (" * tile^{-1} * ")"),
        title = "Other hard corals")+
@@ -645,8 +645,8 @@ recruits_manuscript <- ggarrange(recruits_top_other, recruits_bottom_other, ncol
 recruits_manuscript
 
 ggsave(recruits_manuscript, filename = "figures/Figure2.PDF",
-         width = 240,
-         height = 160,
+         width = 260,
+         height = 165,
          units = "mm"
         )
 ```
@@ -683,8 +683,6 @@ ggsave(recruits_wo_other, filename = "figures/Figure2.PDF",
          units = "mm"
         )
 ```
-
-
 
 
 ## 1.2. Composition of Vegetated tiles
