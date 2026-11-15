@@ -1,0 +1,121 @@
+---
+title: "Benthic Composition"
+author: "Monique White"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(car)
+library(emmeans)
+library("FactoMineR")
+library("factoextra")
+library(FactoMineR)
+library(factoextra)
+library(vegan) #to do NMDS
+library(PCAmixdata)
+library(ggfortify)
+library(glmmTMB) # Generalized Linear Mixed Models using Template Model Builder
+library(DHARMa) # Diagnostics for Hierarchical (multi-level/mixed) regression models
+library(ggpubr)
+library(ggeffects) #to be able to do ggpredict
+library(ggh4x) # to specify x and y axis if desired
+library(MuMIn) #model selection function
+library(ggrepel)
+library(ggordiplots) #nmds and ordination plots
+
+# Benthic Data
+PIT <- PIT <- read_csv("PIT_final.csv") %>%
+  mutate(across(8:94, ~replace_na(.x, 0))) %>%
+  mutate(across(8:94, as.numeric))
+
+PIT <- PIT %>% 
+  filter(Year %in% c("2021-22", "2022-23", "2023-24", "2024-25", "2025-26"))
+
+PIT <- PIT |> 
+  mutate(
+    Site = case_when(
+      Site %in% c("Vicky-HS", "Vickys") ~ "Vicky-HS",
+      Site %in% c("Turtle Beach", "TurtleB-CooksP") ~ "TurtleB-CooksP",
+      Site %in% c("Lag2-Trimodal", "Lagoon") ~ "Lag2-Trimodal",
+      Site == "Turtle South - Front (Sargassum)" ~ "TS_Crest",
+      Site == "Turtle South - Coral" ~ "TS_Back",
+      Site == "Turtle North - front" ~ "TN_Crest",
+      TRUE ~ Site
+    ),
+    Reef = case_when(
+      Site %in% c("Day 1", "Day 2", "Day 3") ~ "Day",
+      Site %in% c("Hicks 1", "Hicks 2", "Hicks 3") ~ "Hicks",
+      Site %in% c("Mac 1", "Mac 2", "Mac 3") ~ "MacGillivray",
+      Site %in% c("TN_Back", "TN_coral", "TN_Crest") ~ "Turtle N",
+      Site %in% c("TS_Back", "TS_Channel", "TS_Crest") ~ "Turtle S",
+      Site %in% c("TurtleB-CooksP", "Lag2-Trimodal", "Vicky-HS") ~ "Lizard",
+      TRUE ~ NA_character_
+    ))
+
+
+PIT<- PIT |> 
+  mutate(
+    Shelf = factor(Shelf),
+    Reef = factor(Reef),
+    Site = factor(Site))
+
+PIT <- PIT %>%
+  mutate(
+    # Acroporidae = rowSums(select(., `Acropora - branching`:`Montipora`), na.rm = TRUE),
+    # 
+    # Pocilloporidae = rowSums(select(., Pocillopora:Stylophora), na.rm = TRUE),
+    # 
+    # Poritidae = rowSums(select(., `Porites - branching`:Goniopora), na.rm = TRUE),
+    
+    `Other Hard coral` = rowSums(dplyr::select(., `Favia (plocoid)`:`other submassive`), na.rm = TRUE),
+    
+    `Soft coral` = rowSums(dplyr::select(., Lobophytum:`Soft-other`), na.rm = TRUE),
+    `Phaeophyceae` = rowSums(dplyr::select(., Sargassum:Lobophora), na.rm = TRUE),
+    `Rhodophyta` = rowSums(dplyr::select(., Asparagopsis:Jania), na.rm = TRUE),
+    `Chlorophyta`= rowSums(dplyr::select(., Halimeda:Valonia), na.rm = TRUE),
+    `Sand and Rubble` = rowSums(dplyr::select(., Sand:Rubble), na.rm = TRUE),
+    Turf = rowSums(dplyr::select(., `Pavement/EAM`:`Dead massive`), na.rm = TRUE),
+    Other = rowSums(dplyr::select(., Sponge:Clam), na.rm = TRUE),
+    Zoantharian = rowSums(dplyr::select(., `Zoantharian - Red`:`Zoantharian - Green`), na.rm = TRUE)
+  )
+
+PIT <- PIT |> 
+  dplyr::select(Year, Shelf, Reef, Site, Transect, `Acropora - branching`:Goniopora, `Other Hard coral`:Other, CCA, Cyanobacteria, Halophila)
+
+PIT <- PIT |> 
+  mutate(
+    sum = rowSums(across(`Acropora - branching`:Halophila), na.rm = TRUE)
+  )
+
+PIT <- PIT |> 
+  mutate(
+    across(`Acropora - branching`:Halophila, ~ .x * 2)
+  )
+```
+
+```{r}
+PIT |> select(Year, Shelf,Reef, `Acropora - branching`:`Soft coral`) |> 
+  pivot_longer(cols = 4:17, names_to = "Coral_type", values_to = "frequency") |> 
+  group_by(Year, Shelf, Reef, Coral_type) |> 
+  summarise(mean = mean(frequency),
+            se = sd(frequency)/n()
+            ) |> 
+  ggplot(aes(x=Reef, y=mean))+
+  geom_col(aes(fill = Coral_type), position = position_dodge(0.5))+
+  geom_errorbar(aes(x=Reef,
+             y=mean, group = Coral_type,
+             ymin=(mean-se), ymax = (mean+se)), position = position_dodge(0.5),
+             colour = "black", linewidth = 0.1)+
+  facet_wrap(~Year, ncol = 1)+
+  labs(y = "Average percent cover")
+```
+
