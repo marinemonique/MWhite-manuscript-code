@@ -65,7 +65,7 @@ PIT <- PIT |>
 PIT<- PIT |> 
   mutate(
     Shelf = factor(Shelf),
-    Reef = factor(Reef),
+    Reef = factor(Reef, levels = c("Turtle S", "Turtle N", "Lizard","MacGillivray", "Day", "Hicks")),
     Site = factor(Site))
 
 PIT <- PIT %>%
