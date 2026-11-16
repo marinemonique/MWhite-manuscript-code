@@ -104,18 +104,23 @@ PIT <- PIT |>
 
 ```{r}
 PIT |> select(Year, Shelf,Reef, `Acropora - branching`:`Soft coral`) |> 
-  pivot_longer(cols = 4:17, names_to = "Coral_type", values_to = "frequency") |> 
-  group_by(Year, Shelf, Reef, Coral_type) |> 
+  pivot_longer(cols = 4:17, names_to = "Coral", values_to = "frequency") |> 
+  group_by(Year, Shelf, Reef, Coral) |> 
   summarise(mean = mean(frequency),
             se = sd(frequency)/n()
             ) |> 
   ggplot(aes(x=Reef, y=mean))+
-  geom_col(aes(fill = Coral_type), position = position_dodge(0.5))+
+  geom_col(aes(fill = Coral), position = position_dodge(0.5))+
   geom_errorbar(aes(x=Reef,
-             y=mean, group = Coral_type,
+             y=mean, group = Coral,
              ymin=(mean-se), ymax = (mean+se)), position = position_dodge(0.5),
              colour = "black", linewidth = 0.1)+
   facet_wrap(~Year, ncol = 1)+
-  labs(y = "Average percent cover")
+  labs(y = "Average percent cover")+
+  theme_bw()+
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank())
+
+#would need to italicise the genera here, but no longer have access to Adobe Illustrator
 ```
 
